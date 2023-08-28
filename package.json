@@ -1,0 +1,38 @@
+{
+  "name": "react-pixels",
+  "version": "0.1.5",
+  "description": "Pixels.js Adapter for React (https://silvia-odwyer.github.io/pixels.js/)",
+  "repository": "https://github.com/silvia-odwyer/pixels.js",
+  "author": "Silvia Odwyer",
+  "license": "Apache-2.0 license",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "jsdom"
+  },
+  "devDependencies": {
+    "@babel/register": "^7.22.5",
+    "@testing-library/jest-dom": "^6.1.2",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@types/express": "^4.17.17",
+    "@types/jest": "^29.5.4",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "jest": "^29.6.4",
+    "jest-environment-jsdom": "^29.6.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.2.2"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-dom": "*"
+  }
+}
