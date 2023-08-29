@@ -1,9 +1,9 @@
 import React, { createRef, useEffect, useState } from 'react';
 import {  EDIT_OBJECT, EXPORT_OBJECT, FILTERS, PixelsImageProps, VALID_MIMETYPE } from './types';
 import Pixels from "./lib"
-import { adjustBrightness, adjustContrast, adjustHue, adjustSaturation } from './basicAdjust';
+import { adjustBrightness, adjustContrast, adjustHue, adjustSaturation, setHorizontalFlip, setVerticalFlip } from './basicAdjust';
 
-const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, src, ...props }) => {
+const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, verticalFlip, horizontalFlip, src, ...props }) => {
   const ref = createRef<HTMLCanvasElement>();
   const [img, setImg] = useState<HTMLImageElement>();
   const [inferedMimetype, setInferedMimetype] = useState<VALID_MIMETYPE>('image/png')
@@ -112,12 +112,18 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
     context.putImageData(imgData, 0, 0);
   }
 
-  const haveChanges = () => (editObject.filter || editObject.brightness || editObject.contrast || editObject.hue || editObject.saturation)
+  const haveChanges = () => (editObject.verticalFlip || editObject.horizontalFlip || editObject.filter || editObject.brightness || editObject.contrast || editObject.hue || editObject.saturation)
 
   const load = () => {
     let imageData, context;
     if(ref && ref.current && img && haveChanges()) {
       [context, imageData] = getImageData(img);
+    }
+    if(ref && ref.current && context && editObject.verticalFlip) {
+      setVerticalFlip(ref.current, context);
+    }
+    if(ref && ref.current && context && editObject.horizontalFlip) {
+      setHorizontalFlip(ref.current, context);
     }
     if(context && imageData && editObject.filter) {
       loadFilter(context, imageData)
@@ -146,7 +152,9 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
       contrast,
       hue,
       saturation,
-      lastChange: Date.now()
+      lastChange: Date.now(),
+      verticalFlip,
+      horizontalFlip
     })
   }, [filter, brightness, contrast, hue, saturation])
 

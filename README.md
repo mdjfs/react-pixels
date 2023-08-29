@@ -79,6 +79,28 @@ function App() {
 export default App;
 ```
 
+### Flip Image
+
+```javascript
+import React from 'react';
+import { PixelsImage } from 'react-pixels';
+
+function App() {
+  return (
+    <div>
+      <h1>Pixels Image React Component</h1>
+      <PixelsImage
+        src="path/to/your/image.jpg"
+        horizontalFlip={true} // flip image horizontal
+        verticalFlip={false} // flip image vertical
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
 ### Export image
 
 ```javascript

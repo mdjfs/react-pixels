@@ -77,6 +77,8 @@ export type EDIT_OBJECT = {
     contrast?: number | undefined;
     filter?: string | FILTERS[] | string[] | undefined;
     lastChange?: number;
+    verticalFlip?: boolean;
+    horizontalFlip?: boolean;
 }
 
 export type EXPORT_OBJECT = {
@@ -95,4 +97,6 @@ export interface PixelsImageProps extends CanvasHTMLAttributes<HTMLCanvasElement
     saturation?: number;
     brightness?: number;
     contrast?: number;
+    verticalFlip?: boolean;
+    horizontalFlip?: boolean;
 }

@@ -115,3 +115,14 @@ export const adjustHue = (imgData: any, percentage = 0) => {
     }
     return imgData;
 }
+
+export const setVerticalFlip = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
+  context.setTransform(1, 0, 0, -1, 0, canvas.height);
+  context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+}
+
+export const setHorizontalFlip = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
+  context.translate(canvas.width, 0);
+  context.scale(-1, 1);
+  context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+}
