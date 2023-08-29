@@ -70,6 +70,15 @@ export type RETURN_IMAGE_TYPE = HTMLImageElement | Blob | string;
 
 export type VALID_MIMETYPE = 'image/jpeg' | 'image/png';
 
+export type EDIT_OBJECT = {
+    brightness?: number | undefined;
+    saturation?: number | undefined;
+    hue?: number | undefined;
+    contrast?: number | undefined;
+    filter?: string | FILTERS[] | string[] | undefined;
+    lastChange?: number;
+}
+
 export type EXPORT_OBJECT = {
   getBlob: () => Promise<Blob | null>;
   getDataURL: () => string | undefined;
@@ -82,4 +91,8 @@ export interface PixelsImageProps extends CanvasHTMLAttributes<HTMLCanvasElement
     filter?: FILTERS | FILTERS[] | string | string[],
     onFilter?: (exportObject: EXPORT_OBJECT) => void,
     src?: string;
+    hue?: number;
+    saturation?: number;
+    brightness?: number;
+    contrast?: number;
 }

@@ -1,11 +1,13 @@
 import React, { createRef, useEffect, useState } from 'react';
-import {  EXPORT_OBJECT, FILTERS, PixelsImageProps, VALID_MIMETYPE } from './types';
+import {  EDIT_OBJECT, EXPORT_OBJECT, FILTERS, PixelsImageProps, VALID_MIMETYPE } from './types';
 import Pixels from "./lib"
+import { adjustBrightness, adjustContrast, adjustHue, adjustSaturation } from './basicAdjust';
 
-const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, src, ...props }) => {
+const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, src, ...props }) => {
   const ref = createRef<HTMLCanvasElement>();
   const [img, setImg] = useState<HTMLImageElement>();
   const [inferedMimetype, setInferedMimetype] = useState<VALID_MIMETYPE>('image/png')
+  const [editObject, setEditObject] = useState<EDIT_OBJECT>({})
 
   const getExportObject: () => EXPORT_OBJECT = () => {
     const toBlob = () => new Promise((r) => {
@@ -63,34 +65,94 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, src, ...pro
     }
   }
 
-  const loadImage = (img: HTMLImageElement) => {
+  const getImageData: (img: HTMLImageElement) => [] | [CanvasRenderingContext2D, ImageData] = (img: HTMLImageElement) => {
     const { width, height } = img;
     if(ref && ref.current) {
       const canvas = ref.current;
       canvas.height = height;
       canvas.width = width;
-      const context = canvas.getContext('2d');
+      const context = canvas.getContext('2d', { willReadFrequently: true });
       if(context) {
         const pattern = context.createPattern(img, 'no-repeat');
         context.fillStyle = pattern as CanvasPattern;
         context.fillRect(0, 0, canvas.width, canvas.height);
-        let imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-        for(const flt of Array.isArray(filter) ? filter : [filter]) {
-          if(Pixels.filter_dict[flt as FILTERS]){
-            imgData = Pixels.filter_dict[flt as FILTERS](imgData)
-          } else throw new Error(`${flt} is not a valid filter!`)
-        }
-        context.putImageData(imgData, 0, 0);
-        if(onFilter) onFilter(getExportObject())
+        const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+        return [context, imgData];
       } else console.error("PixelsImage: Error obtaining the canvas context")
+    }
+    return [];
+  }
+
+  const loadFilter = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+    for(const flt of Array.isArray(editObject.filter) ? editObject.filter : [editObject.filter]) {
+      if(Pixels.filter_dict[flt as FILTERS]){
+        imgData = Pixels.filter_dict[flt as FILTERS](imgData)
+      } else throw new Error(`${flt} is not a valid filter!`)
+    }
+    context.putImageData(imgData, 0, 0);
+  }
+
+  const loadBrightness = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+    imgData = adjustBrightness(imgData, editObject.brightness)
+    context.putImageData(imgData, 0, 0);
+  }
+
+  const loadHue = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+    imgData = adjustHue(imgData, editObject.hue)
+    context.putImageData(imgData, 0, 0);
+  }
+
+  const loadSaturation = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+    imgData = adjustSaturation(imgData, editObject.saturation)
+    context.putImageData(imgData, 0, 0);
+  }
+
+  const loadContrast = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+    imgData = adjustContrast(imgData, editObject.contrast)
+    context.putImageData(imgData, 0, 0);
+  }
+
+  const haveChanges = () => (editObject.filter || editObject.brightness || editObject.contrast || editObject.hue || editObject.saturation)
+
+  const load = () => {
+    let imageData, context;
+    if(ref && ref.current && img && haveChanges()) {
+      [context, imageData] = getImageData(img);
+    }
+    if(context && imageData && editObject.filter) {
+      loadFilter(context, imageData)
+    }
+    if(context && imageData && editObject.brightness) {
+      loadBrightness(context, imageData)
+    }
+    if(context && imageData && editObject.contrast) {
+      loadContrast(context, imageData)
+    }
+    if(context && imageData && editObject.hue) {
+      loadHue(context, imageData)
+    }
+    if(context && imageData && editObject.saturation) {
+      loadSaturation(context, imageData)
+    }
+    if(context && imageData && onFilter) {
+      onFilter(getExportObject()) 
     }
   }
 
-  useEffect(() => { 
-    if(ref && ref.current && img && filter) {
-      loadImage(img)
-    }
-  }, [ref.current, img, src, filter])
+  useEffect(() => {
+    setEditObject({
+      filter,
+      brightness,
+      contrast,
+      hue,
+      saturation,
+      lastChange: Date.now()
+    })
+  }, [filter, brightness, contrast, hue, saturation])
+
+  useEffect(() => {
+    if(img) load();
+  }, [img, editObject.lastChange])
 
   useEffect(() => {
     if(ref && ref.current && src) {
@@ -103,9 +165,9 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, src, ...pro
       img.onload = () => setImg(img);
       img.onerror = () => {
         if(src.startsWith("http")) {
-          const isArray = Array.isArray(filter);
+          const isArray = Array.isArray(editObject.filter);
           console.error("PixelsImage: There was a CORS error while loading the image. Please consider saving it on your local server or configuring the CORS rules of the remote server.")
-          console.warn(`PixelsImage: Loading the image without the '${isArray ? filter.join(',') : filter}' ${isArray ? 'filters': 'filter'} as it violates the CORS policies of the remote server.`)
+          console.warn(`PixelsImage: Loading the image without the '${isArray ? (editObject.filter as string[]).join(',') : editObject.filter}' ${isArray ? 'filters': 'filter'} as it violates the CORS policies of the remote server.`)
           const tryImg = new Image();
           tryImg.src = src;
           tryImg.onload = () => {

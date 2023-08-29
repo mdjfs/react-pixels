@@ -32,7 +32,8 @@ yarn add react-pixels
 
 ## Usage
 
-Import the Pixels Image component in your React application:
+
+### Apply Pixels.js Filters
 
 ```javascript
 import React from 'react';
@@ -45,6 +46,53 @@ function App() {
       <PixelsImage
         src="path/to/your/image.jpg"
         filter="greyscale" // or ["greyscale", ...] to apply more than one filter
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+
+### Edit saturation, hue, brightness, contrast
+
+```javascript
+import React from 'react';
+import { PixelsImage } from 'react-pixels';
+
+function App() {
+  return (
+    <div>
+      <h1>Pixels Image React Component</h1>
+      <PixelsImage
+        src="path/to/your/image.jpg"
+        saturation={0.5} // -1 to 1 (-100% to 100%)
+        hue={-0.5} // -1 to 1 (-100% to 100%)
+        brightness={1} // -1 to 1 (-100% to 100%)
+        contrast={-0.2} // -1 to 1 (-100% to 100%)
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Export image
+
+```javascript
+import React from 'react';
+import { PixelsImage } from 'react-pixels';
+
+function App() {
+  return (
+    <div>
+      <h1>Pixels Image React Component</h1>
+      <PixelsImage
+        src="path/to/your/image.jpg"
+        filter="greyscale" // or ["greyscale", ...] to apply more than one filter
+        brightness={0.2}
         onFilter={async (exportObject) => {
             await exportObject.getBlob() // for large images
             exportObject.getDataURL() // for small images
