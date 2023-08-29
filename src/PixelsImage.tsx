@@ -83,65 +83,52 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
     return [];
   }
 
-  const loadFilter = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+  const loadFilter = (imgData: ImageData) => {
     for(const flt of Array.isArray(editObject.filter) ? editObject.filter : [editObject.filter]) {
       if(Pixels.filter_dict[flt as FILTERS]){
         imgData = Pixels.filter_dict[flt as FILTERS](imgData)
       } else throw new Error(`${flt} is not a valid filter!`)
     }
-    context.putImageData(imgData, 0, 0);
   }
 
-  const loadBrightness = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+  const loadBrightness = (imgData: ImageData) => {
     imgData = adjustBrightness(imgData, editObject.brightness)
-    context.putImageData(imgData, 0, 0);
   }
 
-  const loadHue = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+  const loadHue = (imgData: ImageData) => {
     imgData = adjustHue(imgData, editObject.hue)
-    context.putImageData(imgData, 0, 0);
   }
 
-  const loadSaturation = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+  const loadSaturation = (imgData: ImageData) => {
     imgData = adjustSaturation(imgData, editObject.saturation)
-    context.putImageData(imgData, 0, 0);
   }
 
-  const loadContrast = (context: CanvasRenderingContext2D, imgData: ImageData) => {
+  const loadContrast = (imgData: ImageData) => {
     imgData = adjustContrast(imgData, editObject.contrast)
-    context.putImageData(imgData, 0, 0);
   }
 
   const haveChanges = () => (editObject.verticalFlip || editObject.horizontalFlip || editObject.filter || editObject.brightness || editObject.contrast || editObject.hue || editObject.saturation)
 
   const load = () => {
-    let imageData, context;
-    if(ref && ref.current && img && haveChanges()) {
-      [context, imageData] = getImageData(img);
-    }
-    if(ref && ref.current && context && editObject.verticalFlip) {
-      setVerticalFlip(ref.current, context);
-    }
-    if(ref && ref.current && context && editObject.horizontalFlip) {
-      setHorizontalFlip(ref.current, context);
-    }
-    if(context && imageData && editObject.filter) {
-      loadFilter(context, imageData)
-    }
-    if(context && imageData && editObject.brightness) {
-      loadBrightness(context, imageData)
-    }
-    if(context && imageData && editObject.contrast) {
-      loadContrast(context, imageData)
-    }
-    if(context && imageData && editObject.hue) {
-      loadHue(context, imageData)
-    }
-    if(context && imageData && editObject.saturation) {
-      loadSaturation(context, imageData)
-    }
-    if(context && imageData && onFilter) {
-      onFilter(getExportObject()) 
+    if(img) {
+      const changed = haveChanges();
+      let [context, imageData] = getImageData(img);
+      if(changed && imageData) {
+        if(editObject.filter) loadFilter(imageData);
+        if(editObject.brightness) loadBrightness(imageData);
+        if(editObject.saturation) loadSaturation(imageData);
+        if(editObject.hue) loadHue(imageData);
+        if(editObject.contrast) loadContrast(imageData);
+        if(onFilter) onFilter(getExportObject()) 
+      } 
+      if(context && imageData) context.putImageData(imageData, 0, 0);
+      if(changed && context) {
+        if(editObject.verticalFlip && ref.current) setVerticalFlip(ref.current, context)
+        if(editObject.horizontalFlip && ref.current) setHorizontalFlip(ref.current, context)
+      }
+      if(changed && onFilter) {
+        onFilter(getExportObject()) 
+      }
     }
   }
 
