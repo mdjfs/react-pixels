@@ -87,14 +87,16 @@ export const adjustBrightness = (imgData: any, percentage = 0) => {
 
 
 export const adjustContrast = (imgData: any, percentage = 0) => {
-    const factor = percentage + 1;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-        imgData.data[i] = clamp(imgData.data[i] * factor, 0, 255); 
-        imgData.data[i + 1] = clamp(imgData.data[i + 1] * factor, 0, 255); 
-        imgData.data[i + 2] = clamp(imgData.data[i + 2] * factor, 0, 255); 
-    }
-    return imgData;
-}
+  const contrast = percentage * 255;
+  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    imgData.data[i] = clamp(factor * (imgData.data[i] - 128) + 128, 0, 255);
+    imgData.data[i + 1] = clamp(factor * (imgData.data[i + 1] - 128) + 128, 0, 255);
+    imgData.data[i + 2] = clamp(factor * (imgData.data[i + 2] - 128) + 128, 0, 255);
+  }
+  
+  return imgData;
+};
 
 export const adjustHue = (imgData: any, percentage = 0) => {
     const factor = Number((percentage).toFixed(2)) * 100;
