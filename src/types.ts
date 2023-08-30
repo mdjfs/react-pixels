@@ -87,6 +87,7 @@ export type EXPORT_OBJECT = {
   getCanvas: () => HTMLCanvasElement | null;
   getImageFromDataURL: () => Promise<HTMLImageElement | undefined>;
   getImageFromBlob: () => Promise<HTMLImageElement | undefined>;
+  getInferedMimetype: () => string;
 }
 
 export interface PixelsImageProps extends CanvasHTMLAttributes<HTMLCanvasElement> {

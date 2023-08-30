@@ -61,7 +61,8 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
           img.src = URL.createObjectURL(blob)
           return img;
         }
-      }
+      },
+      getInferedMimetype: (): string => inferedMimetype,
     }
   }
 
