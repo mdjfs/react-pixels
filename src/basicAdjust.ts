@@ -119,12 +119,23 @@ export const adjustHue = (imgData: any, percentage = 0) => {
 }
 
 export const setVerticalFlip = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
-  context.setTransform(1, 0, 0, -1, 0, canvas.height);
-  context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempContext = tempCanvas.getContext("2d");
+  tempContext?.scale(1, -1);
+  tempContext?.drawImage(canvas, 0, -canvas.height);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(tempCanvas, 0, 0);
 }
 
 export const setHorizontalFlip = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
-  context.translate(canvas.width, 0);
-  context.scale(-1, 1);
-  context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+   const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempContext = tempCanvas.getContext("2d");
+  tempContext?.scale(-1, 1);
+  tempContext?.drawImage(canvas, -canvas.width, 0);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(tempCanvas, 0, 0);
 }

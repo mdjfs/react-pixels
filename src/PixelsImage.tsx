@@ -10,9 +10,10 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
   const [editObject, setEditObject] = useState<EDIT_OBJECT>({})
 
   const getExportObject: () => EXPORT_OBJECT = () => {
+    const canvas = ref && ref.current;
     const toBlob = () => new Promise((r) => {
-      if(ref && ref.current) {
-        ref.current.toBlob(b => r(b as Blob), inferedMimetype)
+      if(canvas) {
+        canvas.toBlob(b => r(b as Blob), inferedMimetype)
       } else r(null)
     }) as Promise<Blob|null>
     return {
@@ -30,22 +31,22 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
        * @returns {string|undefined} Data URL or null if the canvas is not available.
        */
       getDataURL: (): string | undefined => {
-        if(ref && ref.current) return ref.current.toDataURL(inferedMimetype)
+        if(canvas) return canvas.toDataURL(inferedMimetype)
       },
       /**
        * Gets the canvas itself.
        * Faster method. Takes ~0.01ms to get the canvas element
        * @returns {HTMLCanvasElement|null} Canvas element or null if the canvas is not available.
        */
-      getCanvas: (): HTMLCanvasElement | null => ref.current,
+      getCanvas: (): HTMLCanvasElement | null => canvas,
       /**
        * Gets an Image object from the canvas content using DataURL (small images)
        * @returns {Promise<HTMLImageElement | undefined>} Promise that resolves with the Image object or null if the canvas is not available.
        */
       getImageFromDataURL: async (): Promise<HTMLImageElement | undefined> => {
-        if(ref && ref.current) {
+        if(canvas) {
           const img = new Image();
-          img.src = ref.current.toDataURL(inferedMimetype);
+          img.src = canvas.toDataURL(inferedMimetype);
           return img;
         }
       },
@@ -54,7 +55,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
        * @returns {Promise<HTMLImageElement | undefined>} Promise that resolves with the Image object or null if the canvas is not available.
        */
       getImageFromBlob: async (): Promise<HTMLImageElement | undefined> => {
-        if(ref && ref.current) {
+        if(canvas) {
           const img = new Image();
           const blob = await toBlob();
           if(!blob) return;

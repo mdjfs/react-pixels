@@ -1,6 +1,6 @@
 {
   "name": "react-pixels",
-  "version": "0.2.8",
+  "version": "0.3.1",
   "description": "Pixels.js Adapter for React (https://silvia-odwyer.github.io/pixels.js/)",
   "repository": "https://github.com/mdjfs/react-pixels",
   "author": "Silvia Odwyer",
