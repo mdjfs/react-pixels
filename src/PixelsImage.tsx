@@ -143,7 +143,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
       verticalFlip,
       horizontalFlip
     })
-  }, [filter, brightness, contrast, hue, saturation])
+  }, [filter, brightness, contrast, hue, saturation, verticalFlip, horizontalFlip])
 
   useEffect(() => {
     if(img) load();
