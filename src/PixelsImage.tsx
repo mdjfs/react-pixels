@@ -150,15 +150,15 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
   }, [filter, brightness, contrast, hue, saturation, verticalFlip, horizontalFlip])
 
   useEffect(() => {
-    if(ref && ref.current) {
+    if(ref && ref.current && img) {
       const observer = new IntersectionObserver((ent) => setIsVisible(!!ent.find(e => e.isIntersecting)))
       observer.observe(ref.current);
     }
-  }, [ref.current])
+  }, [ref.current, img])
 
   useEffect(() => {
-    if(img && isVisible) load();
-  }, [img, isVisible, editObject.lastChange])
+    if(isVisible) load();
+  }, [isVisible, editObject.lastChange])
 
   useEffect(() => {
     if(ref && ref.current && src) {
