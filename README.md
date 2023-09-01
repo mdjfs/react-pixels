@@ -101,6 +101,27 @@ function App() {
 export default App;
 ```
 
+### Fast Load
+
+```javascript
+import React from 'react';
+import { PixelsImage } from 'react-pixels';
+
+function App() {
+  return (
+    <div>
+      <h1>Pixels Image React Component</h1>
+      <PixelsImage
+        src={image} // HTMLImageElement (ref or instance of "new Image()")
+        filter="greyscale"
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
 ### Export image
 
 ```javascript

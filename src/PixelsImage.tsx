@@ -2,12 +2,14 @@ import React, { createRef, useEffect, useState } from 'react';
 import {  EDIT_OBJECT, EXPORT_OBJECT, FILTERS, PixelsImageProps, VALID_MIMETYPE } from './types';
 import Pixels from "./lib"
 import { adjustBrightness, adjustContrast, adjustHue, adjustSaturation, setHorizontalFlip, setVerticalFlip } from './basicAdjust';
+import { isImageLoaded } from './utils';
 
-const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, verticalFlip, horizontalFlip, src, ...props }) => {
+const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, verticalFlip, horizontalFlip, src, children, ...props }) => {
   const ref = createRef<HTMLCanvasElement>();
   const [img, setImg] = useState<HTMLImageElement>();
   const [inferedMimetype, setInferedMimetype] = useState<VALID_MIMETYPE>('image/png')
   const [editObject, setEditObject] = useState<EDIT_OBJECT>({})
+  const [isVisible, setIsVisible] = useState(false);
 
   const getExportObject: () => EXPORT_OBJECT = () => {
     const canvas = ref && ref.current;
@@ -148,12 +150,25 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
   }, [filter, brightness, contrast, hue, saturation, verticalFlip, horizontalFlip])
 
   useEffect(() => {
-    if(img) load();
-  }, [img, editObject.lastChange])
+    if(ref && ref.current) {
+      const observer = new IntersectionObserver((ent) => setIsVisible(!!ent.find(e => e.isIntersecting)))
+      observer.observe(ref.current);
+    }
+  }, [ref.current])
+
+  useEffect(() => {
+    if(img && isVisible) load();
+  }, [img, isVisible, editObject.lastChange])
 
   useEffect(() => {
     if(ref && ref.current && src) {
       const canvas = ref.current;
+      if(typeof src === "object") {
+        const img = src;
+        if(isImageLoaded(img)) setImg(img);
+        else img.onload = () => setImg(img);
+        return;
+      }
       const type = src.includes(".jpg") || src.includes(".jpeg") ? 'image/jpeg' : 'image/png';
       setInferedMimetype(type);
       const img = new Image();
@@ -183,7 +198,9 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
     }
   }, [ref.current, src])
 
-  return  <canvas {...props} ref={ref} />;
+  return  <>
+    <canvas {...props} ref={ref} />
+  </>;
 };
 
 export default PixelsImage;

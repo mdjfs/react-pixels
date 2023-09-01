@@ -93,7 +93,7 @@ export type EXPORT_OBJECT = {
 export interface PixelsImageProps extends CanvasHTMLAttributes<HTMLCanvasElement> {
     filter?: FILTERS | FILTERS[] | string | string[],
     onFilter?: (exportObject: EXPORT_OBJECT) => void,
-    src?: string;
+    src?: string | HTMLImageElement;
     hue?: number;
     saturation?: number;
     brightness?: number;
