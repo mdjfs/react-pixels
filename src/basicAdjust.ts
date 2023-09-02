@@ -1,3 +1,5 @@
+import { EDIT_COLORS } from "./types";
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
@@ -55,67 +57,40 @@ function hslToRgb(h: number, s: number, l: number) {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
-export const adjustSaturation = (imgData: any, percentage = 0) => {
-    const factor = percentage + 1;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-        const r = imgData.data[i];
-        const g = imgData.data[i + 1];
-        const b = imgData.data[i + 2];
-
-        const hsl = rgbToHsl(r, g, b) as number[];
-
+export const adjustColors = (imgData: ImageData, colors: EDIT_COLORS) => {
+  let factor: number;
+  for(let i = 0; i < imgData.data.length; i+= 4) {
+    if(colors.brightness !== undefined) {
+        factor = colors.brightness + 1;
+        imgData.data[i] *= factor;
+        imgData.data[i + 1] *= factor;
+        imgData.data[i + 2] *= factor;
+    }
+    if(colors.contrast !== undefined) {
+      factor = colors.contrast + 1;
+      imgData.data[i] = clamp(factor * (imgData.data[i] - 128) + 128, 0, 255);
+      imgData.data[i + 1] = clamp(factor * (imgData.data[i + 1] - 128) + 128, 0, 255);
+      imgData.data[i + 2] = clamp(factor * (imgData.data[i + 2] - 128) + 128, 0, 255);
+    }
+    if(colors.hue !== undefined || colors.saturation !== undefined) {
+      let r = imgData.data[i];
+      let g = imgData.data[i + 1];
+      let b = imgData.data[i + 2];
+      let hsl = rgbToHsl(r, g, b) as number[];
+      if(colors.saturation !== undefined) {
+        factor = colors.saturation + 1;
         hsl[1] *= factor;
-
-        const [newR, newG, newB] = hslToRgb(hsl[0], hsl[1], hsl[2]);
-
-        imgData.data[i] = newR;
-        imgData.data[i + 1] = newG;
-        imgData.data[i + 2] = newB;
-    }
-    return imgData;
-}
-
-export const adjustBrightness = (imgData: any, percentage = 0) => {
-    const factor = percentage + 1;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-        imgData.data[i] *= factor
-        imgData.data[i + 1] *= factor
-        imgData.data[i + 2] *= factor
-    }
-    return imgData;
-}
-
-
-export const adjustContrast = (imgData: any, percentage = 0) => {
-  const contrast = percentage * 255;
-  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-  for (let i = 0; i < imgData.data.length; i += 4) {
-    imgData.data[i] = clamp(factor * (imgData.data[i] - 128) + 128, 0, 255);
-    imgData.data[i + 1] = clamp(factor * (imgData.data[i + 1] - 128) + 128, 0, 255);
-    imgData.data[i + 2] = clamp(factor * (imgData.data[i + 2] - 128) + 128, 0, 255);
-  }
-  
-  return imgData;
-};
-
-export const adjustHue = (imgData: any, percentage = 0) => {
-    const factor = Number((percentage).toFixed(2)) * 100;
-    for (let i = 0; i < imgData.data.length; i += 4) {
-        const r = imgData.data[i];
-        const g = imgData.data[i + 1];
-        const b = imgData.data[i + 2];
-
-        const hsl = rgbToHsl(r, g, b) as number[];
-
+      }
+      if(colors.hue !== undefined) {
+        factor = Number((colors.hue).toFixed(2)) * 100
         hsl[0] = (hsl[0] + factor / 360) % 1;
-
-        const [newR, newG, newB] = hslToRgb(hsl[0], hsl[1], hsl[2]);
-
-        imgData.data[i] = newR;
-        imgData.data[i + 1] = newG;
-        imgData.data[i + 2] = newB;
+      }
+      [r, g, b] = hslToRgb(hsl[0], hsl[1], hsl[2]);
+      imgData.data[i] = r;
+      imgData.data[i + 1] = g;
+      imgData.data[i + 2] = b;
     }
-    return imgData;
+  }
 }
 
 export const setVerticalFlip = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
@@ -130,7 +105,7 @@ export const setVerticalFlip = (canvas: HTMLCanvasElement, context: CanvasRender
 }
 
 export const setHorizontalFlip = (canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) => {
-   const tempCanvas = document.createElement("canvas");
+  const tempCanvas = document.createElement("canvas");
   tempCanvas.width = canvas.width;
   tempCanvas.height = canvas.height;
   const tempContext = tempCanvas.getContext("2d");

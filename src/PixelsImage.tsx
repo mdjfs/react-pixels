@@ -1,8 +1,8 @@
 import React, { createRef, useEffect, useState } from 'react';
-import {  EDIT_OBJECT, EXPORT_OBJECT, FILTERS, PixelsImageProps, VALID_MIMETYPE } from './types';
+import { EDIT_OBJECT, EXPORT_OBJECT, FILTERS, IMAGE_DATA_CONTEXT, PixelsImageProps, VALID_MIMETYPE } from './types';
 import Pixels from "./lib"
-import { adjustBrightness, adjustContrast, adjustHue, adjustSaturation, setHorizontalFlip, setVerticalFlip } from './basicAdjust';
-import { isImageLoaded } from './utils';
+import { adjustColors, setHorizontalFlip, setVerticalFlip } from './basicAdjust';
+import { getInferedType, isImageLoaded } from './utils';
 
 const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, verticalFlip, horizontalFlip, src, children, ...props }) => {
   const ref = createRef<HTMLCanvasElement>();
@@ -10,6 +10,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
   const [inferedMimetype, setInferedMimetype] = useState<VALID_MIMETYPE>('image/png')
   const [editObject, setEditObject] = useState<EDIT_OBJECT>({})
   const [isVisible, setIsVisible] = useState(false);
+  const [dataContext, setDataContext] = useState<IMAGE_DATA_CONTEXT>();
 
   const getExportObject: () => EXPORT_OBJECT = () => {
     const canvas = ref && ref.current;
@@ -69,22 +70,20 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
     }
   }
 
-  const getImageData: (img: HTMLImageElement) => [] | [CanvasRenderingContext2D, ImageData] = (img: HTMLImageElement) => {
+  const clearContext = (canvas: HTMLCanvasElement, img: HTMLImageElement, context: CanvasRenderingContext2D): IMAGE_DATA_CONTEXT => {
+    const pattern = context.createPattern(img, 'no-repeat');
+    context.fillStyle = pattern as CanvasPattern;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+    return [context, imgData];
+  }
+
+  const getDataContext = (canvas: HTMLCanvasElement, img: HTMLImageElement): IMAGE_DATA_CONTEXT | undefined => {
     const { width, height } = img;
-    if(ref && ref.current) {
-      const canvas = ref.current;
-      canvas.height = height;
-      canvas.width = width;
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-      if(context) {
-        const pattern = context.createPattern(img, 'no-repeat');
-        context.fillStyle = pattern as CanvasPattern;
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-        return [context, imgData];
-      } else console.error("PixelsImage: Error obtaining the canvas context")
-    }
-    return [];
+    canvas.height = height;
+    canvas.width = width;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if(context) return clearContext(canvas, img, context)
   }
 
   const loadFilter = (imgData: ImageData) => {
@@ -95,44 +94,17 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
     }
   }
 
-  const loadBrightness = (imgData: ImageData) => {
-    imgData = adjustBrightness(imgData, editObject.brightness)
-  }
-
-  const loadHue = (imgData: ImageData) => {
-    imgData = adjustHue(imgData, editObject.hue)
-  }
-
-  const loadSaturation = (imgData: ImageData) => {
-    imgData = adjustSaturation(imgData, editObject.saturation)
-  }
-
-  const loadContrast = (imgData: ImageData) => {
-    imgData = adjustContrast(imgData, editObject.contrast)
-  }
-
-  const haveChanges = () => (editObject.verticalFlip || editObject.horizontalFlip || editObject.filter || editObject.brightness || editObject.contrast || editObject.hue || editObject.saturation)
-
   const load = () => {
-    if(img) {
-      const changed = haveChanges();
-      let [context, imageData] = getImageData(img);
-      if(changed && imageData) {
-        if(editObject.filter) loadFilter(imageData);
-        if(editObject.brightness) loadBrightness(imageData);
-        if(editObject.saturation) loadSaturation(imageData);
-        if(editObject.hue) loadHue(imageData);
-        if(editObject.contrast) loadContrast(imageData);
-        if(onFilter) onFilter(getExportObject()) 
-      } 
-      if(context && imageData) context.putImageData(imageData, 0, 0);
-      if(changed && context) {
-        if(editObject.verticalFlip && ref.current) setVerticalFlip(ref.current, context)
-        if(editObject.horizontalFlip && ref.current) setHorizontalFlip(ref.current, context)
+    if(dataContext && ref.current) {
+      let [context, imageData] = dataContext;
+      if(editObject.filter) loadFilter(imageData);
+      const { brightness, saturation, contrast, hue } = editObject;
+      if(brightness !== undefined || saturation !== undefined || hue !== undefined || contrast !== undefined) {
+        adjustColors(imageData, { brightness, saturation, hue, contrast });
       }
-      if(changed && onFilter) {
-        onFilter(getExportObject()) 
-      }
+      if(editObject.verticalFlip) setVerticalFlip(ref.current, context);
+      if(editObject.horizontalFlip) setHorizontalFlip(ref.current, context);
+      if(onFilter) onFilter(getExportObject())
     }
   }
 
@@ -150,26 +122,34 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
   }, [filter, brightness, contrast, hue, saturation, verticalFlip, horizontalFlip])
 
   useEffect(() => {
-    if(ref && ref.current && img) {
+    if(ref && ref.current && dataContext) {
       const observer = new IntersectionObserver((ent) => setIsVisible(!!ent.find(e => e.isIntersecting)))
       observer.observe(ref.current);
     }
-  }, [ref.current, img])
+  }, [ref.current, dataContext])
 
   useEffect(() => {
-    if(isVisible) load();
-  }, [isVisible, editObject.lastChange])
+    if(img && ref.current) {
+      if(dataContext) setDataContext(clearContext(ref.current, img, dataContext[0]))
+      else setDataContext(getDataContext(ref.current, img))
+    }
+  }, [ref.current, img, dataContext])
+
+  useEffect(() => {
+    if(dataContext && isVisible) load();
+  }, [dataContext, isVisible, editObject.lastChange])
 
   useEffect(() => {
     if(ref && ref.current && src) {
       const canvas = ref.current;
       if(typeof src === "object") {
         const img = src;
+        setInferedMimetype(getInferedType(img.src));
         if(isImageLoaded(img)) setImg(img);
         else img.onload = () => setImg(img);
         return;
       }
-      const type = src.includes(".jpg") || src.includes(".jpeg") ? 'image/jpeg' : 'image/png';
+      const type = getInferedType(src);
       setInferedMimetype(type);
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -198,9 +178,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
     }
   }, [ref.current, src])
 
-  return  <>
-    <canvas {...props} ref={ref} />
-  </>;
+  return  <canvas {...props} ref={ref} />;
 };
 
 export default PixelsImage;

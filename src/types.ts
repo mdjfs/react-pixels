@@ -1,4 +1,4 @@
-import { CanvasHTMLAttributes, ImgHTMLAttributes } from "react";
+import { CanvasHTMLAttributes } from "react";
 
 export type FILTERS = 'horizontal_lines'|'extreme_offset_blue'|'ocean'|
   'extreme_offset_green'|'offset_green'|'extra_offset_blue'|
@@ -81,6 +81,13 @@ export type EDIT_OBJECT = {
     horizontalFlip?: boolean;
 }
 
+export type EDIT_COLORS = {
+  brightness?: number;
+  hue?: number;
+  contrast?: number;
+  saturation?: number;
+}
+
 export type EXPORT_OBJECT = {
   getBlob: () => Promise<Blob | null>;
   getDataURL: () => string | undefined;
@@ -89,6 +96,8 @@ export type EXPORT_OBJECT = {
   getImageFromBlob: () => Promise<HTMLImageElement | undefined>;
   getInferedMimetype: () => string;
 }
+
+export type IMAGE_DATA_CONTEXT = [CanvasRenderingContext2D, ImageData]
 
 export interface PixelsImageProps extends CanvasHTMLAttributes<HTMLCanvasElement> {
     filter?: FILTERS | FILTERS[] | string | string[],

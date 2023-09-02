@@ -9,3 +9,5 @@ export const isImageLoaded = (img: HTMLImageElement) => {
 
     return true;
 }
+
+export const getInferedType = (src: string) => src.includes('png') ? 'image/png' : 'image/jpeg'
