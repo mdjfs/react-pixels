@@ -11,6 +11,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
   const [editObject, setEditObject] = useState<EDIT_OBJECT>({})
   const [isVisible, setIsVisible] = useState(false);
   const [dataContext, setDataContext] = useState<IMAGE_DATA_CONTEXT>();
+  const [isFiltered, setIsFiltered] = useState(false);
 
   const getExportObject: () => EXPORT_OBJECT = () => {
     const canvas = ref && ref.current;
@@ -96,15 +97,28 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
 
   const load = () => {
     if(dataContext && ref.current) {
+      let changed = false;
       let [context, imageData] = dataContext;
-      if(editObject.filter) loadFilter(imageData);
-      const { brightness, saturation, contrast, hue } = editObject;
-      if(brightness !== undefined || saturation !== undefined || hue !== undefined || contrast !== undefined) {
-        adjustColors(imageData, { brightness, saturation, hue, contrast });
+      if(editObject.filter) {
+        loadFilter(imageData);
+        changed = true;
       }
-      if(editObject.verticalFlip) setVerticalFlip(ref.current, context);
-      if(editObject.horizontalFlip) setHorizontalFlip(ref.current, context);
-      if(onFilter) onFilter(getExportObject())
+      const { brightness, saturation, contrast, hue } = editObject;
+      if(brightness || saturation || hue || contrast) {
+        adjustColors(imageData, { brightness, saturation, hue, contrast });
+        changed = true;
+      }
+      if(editObject.verticalFlip) {
+        setVerticalFlip(ref.current, context);
+        changed = true;
+      }
+      if(editObject.horizontalFlip) {
+        setHorizontalFlip(ref.current, context);
+        changed = true;
+      }
+      if(onFilter && changed) onFilter(getExportObject())
+      if(changed) context.putImageData(imageData, 0, 0);
+      setIsFiltered(true);
     }
   }
 
@@ -130,14 +144,15 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
 
   useEffect(() => {
     if(img && ref.current) {
+      setIsFiltered(false);
       if(dataContext) setDataContext(clearContext(ref.current, img, dataContext[0]))
       else setDataContext(getDataContext(ref.current, img))
     }
-  }, [ref.current, img, dataContext])
+  }, [ref.current, img, editObject.lastChange])
 
   useEffect(() => {
-    if(dataContext && isVisible) load();
-  }, [dataContext, isVisible, editObject.lastChange])
+    if(dataContext && isVisible && !isFiltered) load();
+  }, [dataContext, isVisible, isFiltered])
 
   useEffect(() => {
     if(ref && ref.current && src) {
