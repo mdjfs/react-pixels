@@ -23,6 +23,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({
 
   const load = async () => {
     if(data && ref.current) {
+      const canvas = ref.current;
       let changed = false;
       let { context, imageData } = data;
       setIsFiltered(true);
@@ -37,14 +38,14 @@ const PixelsImage: React.FC<PixelsImageProps> = ({
       }
       if(changed) applyChanges(imageData, context);
       if(editObject.verticalFlip) {
-        setVerticalFlip(ref.current, context);
+        setVerticalFlip(canvas, context);
         changed = true;
       }
       if(editObject.horizontalFlip) {
-        setHorizontalFlip(ref.current, context);
+        setHorizontalFlip(canvas, context);
         changed = true;
       }
-      if(onFilter && source && changed) onFilter(getExportObject(ref.current, source.type))
+      if(onFilter && source && changed) onFilter(getExportObject(canvas, source.type))
     }
   }
 
@@ -63,15 +64,16 @@ const PixelsImage: React.FC<PixelsImageProps> = ({
   useEffect(() => {
     if(ref && ref.current) {
       const observer = new IntersectionObserver((ent) => {
-        if(ref.current) setIsVisible(!!ent.find(e => e.isIntersecting))
+        const v = !!ent.find(e => e.isIntersecting);
+        if(v != isVisible) setIsVisible(v);
       })
       observer.observe(ref.current);
     }
   }, [ref.current])
 
   useEffect(() => {
-    if(data && isVisible && !isFiltered) load();
-  }, [data, isVisible, isFiltered])
+    if(ref.current && data && isVisible && !isFiltered) load();
+  }, [data, isVisible, isFiltered, ref.current])
 
   useEffect(() => {
     if(ref && ref.current && source) {
