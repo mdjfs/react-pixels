@@ -2524,6 +2524,11 @@ node-int64@^0.4.0:
   resolved "https://registry.yarnpkg.com/node-int64/-/node-int64-0.4.0.tgz#87a9065cdb355d3182d8f94ce11188b825c68a3b"
   integrity sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw==
 
+node-pixels@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/node-pixels/-/node-pixels-0.0.1.tgz#791d04d71b6980e71152e96d0cf8d4990f177fcd"
+  integrity sha512-tIbXlKROI1lQlx9V9iaeoaXcvZthmydOjY0ajkmYNlNVAR/ZF/A5XiIzIPtTfrcvGJyO+mAepccN5ljio0n0TQ==
+
 node-releases@^2.0.13:
   version "2.0.13"
   resolved "https://registry.yarnpkg.com/node-releases/-/node-releases-2.0.13.tgz#d5ed1627c23e3461e819b02e57b75e4899b1c81d"

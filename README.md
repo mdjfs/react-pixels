@@ -55,7 +55,7 @@ export default App;
 ```
 
 
-### Edit saturation, hue, brightness, contrast
+### Edit saturation, brightness, contrast
 
 ```javascript
 import React from 'react';
@@ -68,7 +68,6 @@ function App() {
       <PixelsImage
         src="path/to/your/image.jpg"
         saturation={0.5} // -1 to 1 (-100% to 100%)
-        hue={-0.5} // -1 to 1 (-100% to 100%)
         brightness={1} // -1 to 1 (-100% to 100%)
         contrast={-0.2} // -1 to 1 (-100% to 100%)
       />
@@ -115,6 +114,33 @@ function App() {
         src={image} // HTMLImageElement (ref or instance of "new Image()")
         filter="greyscale"
       />
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Image Source Cached
+
+```javascript
+import React, { useEffect, useState } from 'react';
+import { PixelsImage, getImageSource, PixelsImageSource } from 'react-pixels';
+
+function App() {
+  const [source, setSource] = useState<PixelsImageSource>();
+
+  useEffect(() => {
+    getImageSource("./your-image.png").then(setSource)
+  }, [])
+
+  return (
+    <div>
+      <h1>Pixels Image React Component</h1>
+      {source && <PixelsImage
+        src={source} // Cached image
+        filter="greyscale"
+      />}
     </div>
   );
 }

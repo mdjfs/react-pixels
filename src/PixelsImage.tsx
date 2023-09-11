@@ -1,113 +1,41 @@
 import React, { createRef, useEffect, useState } from 'react';
-import { EDIT_OBJECT, EXPORT_OBJECT, FILTERS, IMAGE_DATA_CONTEXT, PixelsImageProps, VALID_MIMETYPE } from './types';
-import Pixels from "./lib"
-import { adjustColors, setHorizontalFlip, setVerticalFlip } from './basicAdjust';
-import { getInferedType, isImageLoaded } from './utils';
+import { FILTERS, PixelsImageData, PixelsImageSource } from "node-pixels";
+import { adjustColors,drawImageSource, getExportObject, getImageSource, loadFilter, setHorizontalFlip, setVerticalFlip, applyChanges } from 'node-pixels';
+import { EDIT_OBJECT, PixelsImageProps } from './types';
 
-const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness, saturation, hue, contrast, verticalFlip, horizontalFlip, src, children, ...props }) => {
+const PixelsImage: React.FC<PixelsImageProps> = ({ 
+  onFilter, 
+  type, 
+  filter, 
+  brightness, 
+  saturation, 
+  contrast, 
+  verticalFlip, 
+  horizontalFlip, 
+  src, 
+  ...props }) => {
   const ref = createRef<HTMLCanvasElement>();
-  const [img, setImg] = useState<HTMLImageElement>();
-  const [inferedMimetype, setInferedMimetype] = useState<VALID_MIMETYPE>('image/png')
   const [editObject, setEditObject] = useState<EDIT_OBJECT>({})
   const [isVisible, setIsVisible] = useState(false);
-  const [dataContext, setDataContext] = useState<IMAGE_DATA_CONTEXT>();
+  const [source, setSource] = useState<PixelsImageSource>();
+  const [data, setData] = useState<PixelsImageData>();
   const [isFiltered, setIsFiltered] = useState(false);
 
-  const getExportObject: () => EXPORT_OBJECT = () => {
-    const canvas = ref && ref.current;
-    const toBlob = () => new Promise((r) => {
-      if(canvas) {
-        canvas.toBlob(b => r(b as Blob), inferedMimetype)
-      } else r(null)
-    }) as Promise<Blob|null>
-    return {
-       /**
-       * Gets a Blob of the canvas content.
-       * Ideal method for large images, optimizes the image size
-       * It's advisable to handle dataURLs for small images, as converting to blobs, even for small images, might introduce unnecessary delays
-       * @returns {Promise<Blob|null>} Promise that resolves with the Blob or null if the canvas is not available.
-       */
-      getBlob: async (): Promise<Blob | null> => await toBlob(),
-      /**
-       * Gets a data URL of the canvas content.
-       * Faster method for <1MB images (3-35ms). Slowly for large images
-       * Caution: Avoid using this method for very large images, as they may significantly increase the image size
-       * @returns {string|undefined} Data URL or null if the canvas is not available.
-       */
-      getDataURL: (): string | undefined => {
-        if(canvas) return canvas.toDataURL(inferedMimetype)
-      },
-      /**
-       * Gets the canvas itself.
-       * Faster method. Takes ~0.01ms to get the canvas element
-       * @returns {HTMLCanvasElement|null} Canvas element or null if the canvas is not available.
-       */
-      getCanvas: (): HTMLCanvasElement | null => canvas,
-      /**
-       * Gets an Image object from the canvas content using DataURL (small images)
-       * @returns {Promise<HTMLImageElement | undefined>} Promise that resolves with the Image object or null if the canvas is not available.
-       */
-      getImageFromDataURL: async (): Promise<HTMLImageElement | undefined> => {
-        if(canvas) {
-          const img = new Image();
-          img.src = canvas.toDataURL(inferedMimetype);
-          return img;
-        }
-      },
-      /**
-       * Gets an Image object from the canvas content using Blob (large images)
-       * @returns {Promise<HTMLImageElement | undefined>} Promise that resolves with the Image object or null if the canvas is not available.
-       */
-      getImageFromBlob: async (): Promise<HTMLImageElement | undefined> => {
-        if(canvas) {
-          const img = new Image();
-          const blob = await toBlob();
-          if(!blob) return;
-          img.src = URL.createObjectURL(blob)
-          return img;
-        }
-      },
-      getInferedMimetype: (): string => inferedMimetype,
-    }
-  }
-
-  const clearContext = (canvas: HTMLCanvasElement, img: HTMLImageElement, context: CanvasRenderingContext2D): IMAGE_DATA_CONTEXT => {
-    const pattern = context.createPattern(img, 'no-repeat');
-    context.fillStyle = pattern as CanvasPattern;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-    return [context, imgData];
-  }
-
-  const getDataContext = (canvas: HTMLCanvasElement, img: HTMLImageElement): IMAGE_DATA_CONTEXT | undefined => {
-    const { width, height } = img;
-    canvas.height = height;
-    canvas.width = width;
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if(context) return clearContext(canvas, img, context)
-  }
-
-  const loadFilter = (imgData: ImageData) => {
-    for(const flt of Array.isArray(editObject.filter) ? editObject.filter : [editObject.filter]) {
-      if(Pixels.filter_dict[flt as FILTERS]){
-        imgData = Pixels.filter_dict[flt as FILTERS](imgData)
-      } else throw new Error(`${flt} is not a valid filter!`)
-    }
-  }
-
-  const load = () => {
-    if(dataContext && ref.current) {
+  const load = async () => {
+    if(data && ref.current) {
       let changed = false;
-      let [context, imageData] = dataContext;
+      let { context, imageData } = data;
+      setIsFiltered(true);
       if(editObject.filter) {
-        loadFilter(imageData);
+        await loadFilter(imageData, editObject.filter as FILTERS);
         changed = true;
       }
-      const { brightness, saturation, contrast, hue } = editObject;
-      if(brightness || saturation || hue || contrast) {
-        adjustColors(imageData, { brightness, saturation, hue, contrast });
+      const { brightness, saturation, contrast } = editObject;
+      if(brightness || saturation || contrast) {
+        await adjustColors(imageData, { brightness, saturation, contrast });
         changed = true;
       }
+      if(changed) applyChanges(imageData, context);
       if(editObject.verticalFlip) {
         setVerticalFlip(ref.current, context);
         changed = true;
@@ -116,9 +44,7 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
         setHorizontalFlip(ref.current, context);
         changed = true;
       }
-      if(onFilter && changed) onFilter(getExportObject())
-      if(changed) context.putImageData(imageData, 0, 0);
-      setIsFiltered(true);
+      if(onFilter && source && changed) onFilter(getExportObject(ref.current, source.type))
     }
   }
 
@@ -127,73 +53,44 @@ const PixelsImage: React.FC<PixelsImageProps> = ({ onFilter, filter, brightness,
       filter,
       brightness,
       contrast,
-      hue,
       saturation,
       lastChange: Date.now(),
       verticalFlip,
       horizontalFlip
     })
-  }, [filter, brightness, contrast, hue, saturation, verticalFlip, horizontalFlip])
+  }, [filter, brightness, contrast, saturation, verticalFlip, horizontalFlip])
 
   useEffect(() => {
-    if(ref && ref.current && dataContext) {
+    if(ref && ref.current && data) {
       const observer = new IntersectionObserver((ent) => setIsVisible(!!ent.find(e => e.isIntersecting)))
       observer.observe(ref.current);
     }
-  }, [ref.current, dataContext])
+  }, [ref.current, data])
 
   useEffect(() => {
-    if(img && ref.current) {
+    if(data && isVisible && !isFiltered) load();
+  }, [data, isVisible, isFiltered])
+
+  useEffect(() => {
+    if(ref && ref.current && source) {
       setIsFiltered(false);
-      if(dataContext) setDataContext(clearContext(ref.current, img, dataContext[0]))
-      else setDataContext(getDataContext(ref.current, img))
+      setData(drawImageSource(ref.current, source));
     }
-  }, [ref.current, img, editObject.lastChange])
+  }, [source, ref.current, editObject.lastChange])
 
   useEffect(() => {
-    if(dataContext && isVisible && !isFiltered) load();
-  }, [dataContext, isVisible, isFiltered])
-
-  useEffect(() => {
-    if(ref && ref.current && src) {
-      const canvas = ref.current;
-      if(typeof src === "object") {
-        const img = src;
-        setInferedMimetype(getInferedType(img.src));
-        if(isImageLoaded(img)) setImg(img);
-        else img.onload = () => setImg(img);
-        return;
+    if(src) {
+      if(src instanceof HTMLImageElement || src instanceof HTMLCanvasElement || typeof src === "string") {
+        (async () => {
+          const source = await getImageSource(src, type);
+          setSource(source);
+        })();
       }
-      const type = getInferedType(src);
-      setInferedMimetype(type);
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = src;
-      img.onload = () => setImg(img);
-      img.onerror = () => {
-        if(src.startsWith("http")) {
-          const isArray = Array.isArray(editObject.filter);
-          console.error("PixelsImage: There was a CORS error while loading the image. Please consider saving it on your local server or configuring the CORS rules of the remote server.")
-          console.warn(`PixelsImage: Loading the image without the '${isArray ? (editObject.filter as string[]).join(',') : editObject.filter}' ${isArray ? 'filters': 'filter'} as it violates the CORS policies of the remote server.`)
-          const tryImg = new Image();
-          tryImg.src = src;
-          tryImg.onload = () => {
-            canvas.width = tryImg.width;
-            canvas.height = tryImg.height;
-            const ctx = canvas.getContext("2d");
-            if(ctx) {
-              ctx.drawImage(tryImg, 0, 0);
-            } else console.error("PixelsImage: Error obtaining the canvas context")
-            tryImg.onerror = () => console.error("PixelsImage: Unknown error while loading the image.")
-          }
-        } else {
-          console.error("PixelsImage: Unknown error while loading the image.")
-        }
-      }
+      else setSource(src);
     }
-  }, [ref.current, src])
+  }, [src])
 
-  return  <canvas {...props} ref={ref} />;
+  if(src) return  <canvas {...props} ref={ref} />;
 };
 
 export default PixelsImage;
