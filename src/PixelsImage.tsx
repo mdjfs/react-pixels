@@ -62,7 +62,9 @@ const PixelsImage: React.FC<PixelsImageProps> = ({
 
   useEffect(() => {
     if(ref && ref.current) {
-      const observer = new IntersectionObserver((ent) => setIsVisible(!!ent.find(e => e.isIntersecting)))
+      const observer = new IntersectionObserver((ent) => {
+        if(ref.current) setIsVisible(!!ent.find(e => e.isIntersecting))
+      })
       observer.observe(ref.current);
     }
   }, [ref.current])
