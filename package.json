@@ -1,6 +1,6 @@
 {
   "name": "react-pixels",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "Pixels.js Adapter for React (https://silvia-odwyer.github.io/pixels.js/)",
   "repository": "https://github.com/mdjfs/react-pixels",
   "author": "Silvia Odwyer",
@@ -37,5 +37,17 @@
   },
   "dependencies": {
     "node-pixels": "^0.0.1"
-  }
+  },
+  "keywords": [
+    "react",
+    "pixels",
+    "Pixels.js",
+    "filter",
+    "image",
+    "colors",
+    "brightness",
+    "contrast",
+    "saturation",
+    "canvas"
+  ]
 }
